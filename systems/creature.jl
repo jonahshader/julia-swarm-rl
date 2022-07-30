@@ -35,12 +35,12 @@ function make_creatures(n::Int, width::Float32, height::Float32, hidden_layer_si
     scalars_temp = zeros(Float32, n)
 
     if device != :cpu
-        position = CuMatrix(position)
-        velocity = CuMatrix(velocity)
-        memory = CuMatrix(memory)
-        vision = CuMatrix(vision)
-        input = CuMatrix(input)
-        scalars_temp = CuVector(scalars_temp)
+        position = cu(position)
+        velocity = cu(velocity)
+        memory = cu(memory)
+        vision = cu(vision)
+        input = cu(input)
+        scalars_temp = cu(scalars_temp)
     end
     Creature(position, velocity, nn, scalars_temp, memory, vision, input)
 end
