@@ -3,6 +3,7 @@ include("nn.jl")
 
 
 using CUDA
+using Raylib
 
 mutable struct Creature
     position::AbstractArray
@@ -81,9 +82,9 @@ function render_creatures(creatures::Creature)
     end
     x = view(pos, 1, :)
     y = view(pos, 2, :)
-    c = Color(0, 255, 255, 255)
+    c = Raylib.RayColor(0/255, 255/255, 255/255, 255/255)
     function draw_circ(x, y)
-        DrawCircle(x, y, 5.0, c)
+        Raylib.DrawCircle(x, y, 5.0, c)
     end
     draw_circ.(Int.(round.(x)), Int.(round.(y)))
 end

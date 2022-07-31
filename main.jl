@@ -16,25 +16,40 @@
 
 
 include("systems/creature.jl")
-include("raylib/raylib.jl")
+using Raylib
 
 const s_w = 1920
 const s_h = 1080
-InitWindow(s_w, s_h, "Tree Growing Simulator")
-SetTargetFPS(165)
+Raylib.InitWindow(s_w, s_h, "Tree Growing Simulator")
+Raylib.SetTargetFPS(165)
 
 # cool_tree = make_tree(7, 150.0, 0.75, 0.0, pi/8, 0.75)
 
-const creatures = make_creatures(8192, Float32(s_w), Float32(s_h), [100, 100], 512, 8, device=:gpu, rand_memory=true)
-while !WindowShouldClose()
-    BeginDrawing()
-        ClearBackground(Color(0, 0, 0, 255))
-        update_creatures!(creatures)
-        update_creatures!(creatures)
-        update_creatures!(creatures)
-        render_creatures(creatures)
+cam = Raylib.RayCamera2D(0f0, 0f0, 0f0, 0f0, 0f0, 1f0)
 
-    EndDrawing()
+const creatures = make_creatures(8192, Float32(s_w), Float32(s_h), [100, 100], 512, 8, device=:gpu, rand_memory=true)
+while !Raylib.WindowShouldClose()
+    if Raylib.IsKeyPressed(Raylib.KEY_W)
+        cam.offset_y -= 1f0
+    end
+    if Raylib.IsKeyPressed(Raylib.KEY_S)
+        cam.offset_y += 1f0
+    end
+    if Raylib.IsKeyPressed(Raylib.KEY_A)
+        cam.offset_x -= 1f0
+    end
+    if Raylib.IsKeyPressed(Raylib.KEY_D)
+        cam.offset_x += 1f0
+    end
+    Raylib.BeginDrawing()
+        Raylib.BeginMode2D(cam)
+            Raylib.ClearBackground(Raylib.RayColor(0/255,0/255,0/255,255/255))
+            update_creatures!(creatures)
+            update_creatures!(creatures)
+            update_creatures!(creatures)
+            render_creatures(creatures)
+        Raylib.EndMode2D()
+    Raylib.EndDrawing()
 end
 
-CloseWindow()
+Raylib.CloseWindow()
