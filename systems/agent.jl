@@ -5,7 +5,7 @@ include("nn.jl")
 using CUDA
 using Raylib
 
-mutable struct Creature
+mutable struct Agent
     position::AbstractArray
     velocity::AbstractArray
     nn::NeuralNet
@@ -15,7 +15,7 @@ mutable struct Creature
     input::AbstractArray
 end
 
-function make_creatures(n::Int, width::Float32, height::Float32, hidden_layer_sizes::Vector{Int}, memory_size::Int, vision_size::Int; device::Symbol = :cpu, activation::Function = tanh, rand_memory::Bool = false)
+function make_agents(n::Int, width::Float32, height::Float32, hidden_layer_sizes::Vector{Int}, memory_size::Int, vision_size::Int; device::Symbol = :cpu, activation::Function = tanh, rand_memory::Bool = false)
     # 4 channels per ray, all of memory is read in
     input_size = vision_size * 4 + memory_size
     # x y mag, all of memory has value and proportion
@@ -43,39 +43,39 @@ function make_creatures(n::Int, width::Float32, height::Float32, hidden_layer_si
         input = cu(input)
         scalars_temp = cu(scalars_temp)
     end
-    Creature(position, velocity, nn, scalars_temp, memory, vision, input)
+    Agent(position, velocity, nn, scalars_temp, memory, vision, input)
 end
 
 
 # TODO: where i left off: rewrite this to use view on memory, and i guess make placeholder views for vision
-function update_creatures!(creatures::Creature)
-    nn_input_vision = view(creatures.input, 1:size(creatures.vision)[1], :)
-    nn_input_memory = view(creatures.input, size(creatures.vision)[1]+1:size(creatures.vision)[1] + size(creatures.memory)[1], :)
-    nn_input_vision .= creatures.vision
-    nn_input_memory .= creatures.memory
+function update_agents!(agents::Agent)
+    nn_input_vision = view(agents.input, 1:size(agents.vision)[1], :)
+    nn_input_memory = view(agents.input, size(agents.vision)[1]+1:size(agents.vision)[1] + size(agents.memory)[1], :)
+    nn_input_vision .= agents.vision
+    nn_input_memory .= agents.memory
 
-    nn_out = forward!(creatures.nn, creatures.input)
+    nn_out = forward!(agents.nn, agents.input)
     nn_out_x = view(nn_out, 1, :)
     nn_out_y = view(nn_out, 2, :)
     nn_out_mag = view(nn_out, 3, :)
-    vel_x = view(creatures.velocity, 1, :)
-    vel_y = view(creatures.velocity, 2, :)
-    nn_out_mem_val = view(nn_out, 3:size(creatures.memory)[1]+2, :)
-    nn_out_mem_prop = view(nn_out, size(creatures.memory)[1]+3:2+size(creatures.memory)[1]*2, :)
-    creatures.memory .= (nn_out_mem_val .* (nn_out_mem_prop .* .5 .+ .5)) .+ creatures.memory .* (nn_out_mem_prop .* -.5 .+ .5)
-    creatures.scalars_temp .= nn_out_mag ./ sqrt.(nn_out_x .^ 2 + nn_out_y .^ 2)
-    # creatures.velocity .+= nn_out_xy .* creatures.scalars_temp
-    vel_x .+= nn_out_x .* creatures.scalars_temp
-    vel_y .+= nn_out_y .* creatures.scalars_temp
-    creatures.velocity .*= 0.9f0
-    creatures.position .+= creatures.velocity .* Float32(1/60)
+    vel_x = view(agents.velocity, 1, :)
+    vel_y = view(agents.velocity, 2, :)
+    nn_out_mem_val = view(nn_out, 3:size(agents.memory)[1]+2, :)
+    nn_out_mem_prop = view(nn_out, size(agents.memory)[1]+3:2+size(agents.memory)[1]*2, :)
+    agents.memory .= (nn_out_mem_val .* (nn_out_mem_prop .* .5 .+ .5)) .+ agents.memory .* (nn_out_mem_prop .* -.5 .+ .5)
+    agents.scalars_temp .= nn_out_mag ./ sqrt.(nn_out_x .^ 2 + nn_out_y .^ 2)
+    # agents.velocity .+= nn_out_xy .* agents.scalars_temp
+    vel_x .+= nn_out_x .* agents.scalars_temp
+    vel_y .+= nn_out_y .* agents.scalars_temp
+    agents.velocity .*= 0.9f0
+    agents.position .+= agents.velocity .* Float32(1/60)
     nothing
 end
 
 
 
-function render_creatures(creatures::Creature)
-    pos = creatures.position
+function render_agents(agents::Agent)
+    pos = agents.position
 
     if typeof(pos) <: CuArray
         pos = Matrix(pos)

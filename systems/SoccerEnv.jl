@@ -1,7 +1,7 @@
-include("creature.jl")
+include("agent.jl")
 mutable struct SoccerEnv
-    team1::Creature
-    team2::Creature
+    team1::Agent
+    team2::Agent
     ball::AbstractArray
 
 end
