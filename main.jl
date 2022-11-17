@@ -27,19 +27,19 @@ Raylib.SetTargetFPS(165)
 
 cam = Raylib.RayCamera2D(0f0, 0f0, 0f0, 0f0, 0f0, 1f0)
 
-const creatures = make_creatures(8192, Float32(s_w), Float32(s_h), [100, 100], 512, 8, device=:gpu, rand_memory=true)
+const creatures = make_creatures(4096, Float32(s_w), Float32(s_h), [100, 100], 512, 8, device=:gpu, rand_memory=true)
 while !Raylib.WindowShouldClose()
-    if Raylib.IsKeyPressed(Raylib.KEY_W)
-        cam.offset_y -= 1f0
+    if Raylib.IsKeyDown(Raylib.KEY_W)
+        cam.offset_y += 3f0
     end
-    if Raylib.IsKeyPressed(Raylib.KEY_S)
-        cam.offset_y += 1f0
+    if Raylib.IsKeyDown(Raylib.KEY_S)
+        cam.offset_y -= 3f0
     end
-    if Raylib.IsKeyPressed(Raylib.KEY_A)
-        cam.offset_x -= 1f0
+    if Raylib.IsKeyDown(Raylib.KEY_A)
+        cam.offset_x += 3f0
     end
-    if Raylib.IsKeyPressed(Raylib.KEY_D)
-        cam.offset_x += 1f0
+    if Raylib.IsKeyDown(Raylib.KEY_D)
+        cam.offset_x -= 3f0
     end
     Raylib.BeginDrawing()
         Raylib.BeginMode2D(cam)

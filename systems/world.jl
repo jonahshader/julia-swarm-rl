@@ -1,4 +1,6 @@
 
-mutable struct World
 
+mutable struct World
+    walls::Matrix
+    
 end
