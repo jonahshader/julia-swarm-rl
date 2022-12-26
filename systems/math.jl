@@ -1,12 +1,21 @@
 
 using LinearAlgebra
 
-# function circle_line_intersecting(ax, ay, bx, by, cx, cy, r)
-#     area2 = abs((bx-ax) * (cy-ay) - (cx-ax) * (by-ay))
-#     lab = sqrt((bx-ax)^2 + (by-ay)^2)
-#     h = area2/lab
-#     h < r
-# end
+function circle_line_intersecting(ax::Number, ay::Number, bx::Number, by::Number, cx::Number, cy::Number, r::Number)
+    area2 = abs((bx-ax) * (cy-ay) - (cx-ax) * (by-ay))
+    lab = sqrt((bx-ax)^2 + (by-ay)^2)
+    h = area2/lab
+    h < r
+end
+
+# TODO: make version that takes in a point and direction instead of two points.
+function circle_line_intersecting(ax::AbstractArray, ay::AbstractArray, bx::AbstractArray, by::AbstractArray, cx::AbstractArray, cy::AbstractArray, r::AbstractArray)
+    area2 = abs.((bx.-ax) .* (cy.-ay) .- (cx.-ax) .* (by.-ay))
+    lab = sqrt.((bx.-ax).^2 .+ (by.-ay).^2)
+    h = area2./lab
+    h .< r
+end
+
 
 function intersect_ray_circle(p::T, d::T, s::Tuple{T, AbstractFloat})::Tuple{Bool, AbstractFloat, T} where {T <: AbstractArray}
     (sc, sr) = s
