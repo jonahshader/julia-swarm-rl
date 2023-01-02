@@ -17,6 +17,23 @@ function circle_line_intersecting(ax::AbstractArray, ay::AbstractArray, bx::Abst
 end
 
 
+mat_dot(a, b) = sum(a.*b, dims = 1)
+
+function line_sdf(a::AbstractArray, b::AbstractArray, p::AbstractArray)
+    h = clamp.(mat_dot(p.-a, b.-a) ./ mat_dot(b.-a, b.-a), 0, 1)
+    sqrt.(sum((p.-a.-(b.-a).*h) .^ 2, dims = 1))
+end
+
+function smoothstep(x)
+    xc = clamp(x, 0, 1)
+    xc * xc * (3 - 2 * xc)
+end
+
+function smoothstep(x::AbstractArray)
+    xc = clamp.(x, 0, 1)
+    xc .* xc .* (3 .- 2 .* xc)
+end
+
 function intersect_ray_circle(p::T, d::T, s::Tuple{T, AbstractFloat})::Tuple{Bool, AbstractFloat, T} where {T <: AbstractArray}
     (sc, sr) = s
     m = p - sc
