@@ -14,18 +14,19 @@ function run(; device = gpu, n=128, memory_size=128, vision_size=32)
 
     env = BaseEnv(vision_size, memory_size, batch_size = n) |> device
 
+    s = 4f0
     while !Raylib.WindowShouldClose()
-        if Raylib.IsKeyPressed(Raylib.KEY_W)
-            cam.offset_y -= 1f0
+        if Raylib.IsKeyDown(Raylib.KEY_W)
+            cam.offset_y += s
         end
-        if Raylib.IsKeyPressed(Raylib.KEY_S)
-            cam.offset_y += 1f0
+        if Raylib.IsKeyDown(Raylib.KEY_S)
+            cam.offset_y -= s
         end
-        if Raylib.IsKeyPressed(Raylib.KEY_A)
-            cam.offset_x -= 1f0
+        if Raylib.IsKeyDown(Raylib.KEY_A)
+            cam.offset_x += s
         end
-        if Raylib.IsKeyPressed(Raylib.KEY_D)
-            cam.offset_x += 1f0
+        if Raylib.IsKeyDown(Raylib.KEY_D)
+            cam.offset_x -= s
         end
         Raylib.BeginDrawing()
             Raylib.BeginMode2D(cam)
