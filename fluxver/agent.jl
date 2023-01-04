@@ -28,7 +28,7 @@ end
 
 function Agent(vision_size::Integer, vision_features::Integer, mem_size::Integer, other_input_size::Integer; batch_size::Integer = 1)
     core = AgentCore(vision_size, vision_features, mem_size, other_input_size)
-    pos_init = randn(Float32, 2, batch_size)
+    pos_init = randn(Float32, 2, batch_size) * 16f0
     vel_init = zeros(Float32, 2, batch_size)
     mem_init = zeros(Float32, mem_size, batch_size)
     recur = Flux.Recur(core, (pos_init, vel_init, mem_init))
@@ -66,9 +66,9 @@ function (m::AgentCore)(h, x)
     mem_new = (mem_val .* (mem_prop .* .5f0 .+ .5f0)) .+ memory .* (mem_prop .* -.5f0 .+ .5f0)
 
     accel_dir = model_output[2*mem_size+1:2*mem_size+2, :]
-    accel_mag = model_output[2*mem_size+2+1:2*mem_size+2+1, :]
+    accel_mag = model_output[2*mem_size+2+1:2*mem_size+2+1, :] .* 5
 
-    vel_new = (vel .+ accel_dir ./ sqrt.(sum(accel_mag .^ 2, dims=1))) .* 0.9f0
+    vel_new = (vel .+ accel_dir .* accel_mag ./ sqrt.(sum(accel_dir .^ 2, dims=1))) .* 0.9f0
     pos_new = pos .+ vel_new .* (1f0/60)
 
     h_new = (pos_new, vel_new, mem_new)

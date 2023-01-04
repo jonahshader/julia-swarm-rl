@@ -1,4 +1,5 @@
 using Flux
+using CUDA
 
 include("agent.jl")
 include("../systems/math.jl")
@@ -10,65 +11,83 @@ struct BaseEnv
 end
 
 function BaseEnv(vision_size::Integer, mem_size::Integer; batch_size::Integer = 1)
-    vision_features = 1
-    other_input_size = 4
+    vision_features::Integer = 1
+    other_input_size::Integer = 6
 
     a = Agent(vision_size, vision_features, mem_size, other_input_size, batch_size=batch_size)
     vision_angle = vcat([[cos(i*2pi/vision_size) sin(i*2pi/vision_size)] for i in 0:vision_size-1]...)'
-    cancel_diag = a = [j==k ? 0 : 1 for i=1:vision_size, j=1:batch_size, k=1:batch_size]
+    cancel_diag = [j==k ? 0 : 1 for j=1:batch_size, k=1:batch_size]
     BaseEnv(a, vision_angle, cancel_diag)
 end
 
+Flux.@functor BaseEnv
+Flux.trainable(m::BaseEnv) = (m.agent,)
+
 function (m::BaseEnv)()
     # run iteration
+    device = if m.agent.recur.state[1] |> typeof <: CuArray
+        gpu
+    else
+        cpu
+    end
+
+
+    n = size(m.agent.recur.state[1])[end]
+    # temp_other_input = randn(Float32, 4, n) |> device
+    # other_input = vcat(m.agent.recur.state[2], m.agent.recur.state[1][1:1, :], m.agent.recur.state[1][2:2, :])
+    other_input = vcat(m.agent.recur.state[2], cos.(m.agent.recur.state[1] ./ 4), sin.(m.agent.recur.state[1] ./ 4))
+
+    vision = reshape(update_vision_soft(m.vision_angle |> cpu, m.agent.recur.state[1] |> cpu)[:, :, 1], :, 1, n) |> device
     
     # run the agent with inputs, return its output
-    m.agent()
+    m.agent((vision, other_input))
 end
 
-function update_vision_soft(vision_angle::AbstractArray, cancel_diag::AbstractArray, pos::AbstractArray)
+function update_vision_soft(vision_angle::AbstractArray, pos::AbstractArray, circles::AbstractArray)
     vis_size = size(vision_angle)[2]
-    println(vis_size)
     pos_size = size(pos)[end]
-    println(pos_size)
-    println(size(vision_angle))
-    println(size(pos))
 
-    a = repeat(pos, inner = (1, vis_size))
-    b = a .+ repeat(vision_angle, 1, pos_size) .* 1024
+    a = repeat(pos, outer = (1, vis_size))
+    b = a .+ repeat(vision_angle, inner = (1, pos_size)) .* 4
+    
+    l = size(a)[end]
+    c = size(circles)[end]
+    
+    d = line_sdf(
+        repeat(a, outer = (1, c)),
+        repeat(b, outer = (1, c)),
+        repeat(circles, inner = (1, l))
+    )
+    return reshape(smoothstep(1 .- d), pos_size, vis_size, :)
+end
+
+function update_vision_soft(vision_angle::AbstractArray, pos::AbstractArray)
+    vis_size = size(vision_angle)[2]
+    pos_size = size(pos)[end]
+
+    a = repeat(pos, outer = (1, vis_size))
+    b = a .+ repeat(vision_angle, inner = (1, pos_size)) .* 4
     
     l = size(a)[end]
     c = pos_size
     
     d = line_sdf(
-        repeat(a, 1, c),
-        repeat(b, 1, c),
+        repeat(a, outer = (1, c)),
+        repeat(b, outer = (1, c)),
         repeat(pos, inner = (1, l))
     )
-    return reshape(smoothstep(1 .- d), vis_size, pos_size, :) .* cancel_diag
+    return sum(reshape(smoothstep(1 .- d), pos_size, vis_size, :) .* (1 .- reshape(Diagonal(ones(pos_size)), pos_size, 1, pos_size)), dims = 3)
 end
 
-function update_vision_soft(vision_angle::AbstractArray, cancel_diag::AbstractArray, pos::AbstractArray, circles::AbstractArray)
-    vis_size = size(vision_angle)[2]
-    println(vis_size)
-    pos_size = size(pos)[end]
-    println(pos_size)
-    println(size(vision_angle))
-    println(size(pos))
+function render_base_env(b::BaseEnv)
+    pos = b.agent.recur.state[1] |> cpu
+    vis_angle = b.vision_angle |> cpu
 
-    a = repeat(pos, inner = (1, vis_size))
-    b = a .+ repeat(vision_angle, 1, pos_size) .* 1024
-    
-    l = size(a)[end]
-    c = size(cirlces)[end]
-    
-    d = line_sdf(
-        repeat(a, 1, c),
-        repeat(b, 1, c),
-        repeat(circles, inner = (1, l))
-    )
-    return reshape(smoothstep(1 .- d), vis_size, pos_size, :) .* cancel_diag
+    x = pos[1, :]
+    y = pos[2, :]
+    c = Raylib.RayColor(0/255, 255/255, 255/255, 255/255)
+    function draw_circ(x, y)
+        Raylib.DrawCircle(x, y, 16.0, c)
+    end
+    draw_circ.(Int.(round.(x * 16)), Int.(round.(y * 16)))
 end
-
-Flux.@functor BaseEnv
-Flux.trainable(m::BaseEnv) = (m.agent,)
