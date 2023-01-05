@@ -1,4 +1,5 @@
 include("base_env.jl")
+include("losses.jl")
 using Raylib
 using Flux
 
@@ -35,6 +36,7 @@ function run(; device = gpu, n=128, memory_size=128, vision_size=32)
                 render_base_env(env)
             Raylib.EndMode2D()
             Raylib.DrawText("$(1/Raylib.GetFrameTime())", 32, 32, 16, Raylib.RayColor(1.0, 1.0, 1.0, 1.0))
+            Raylib.DrawText("sd: $(sd(env))", 32, 64, 16, Raylib.RayColor(1.0, 1.0, 1.0, 1.0))
         Raylib.EndDrawing()
     end
     

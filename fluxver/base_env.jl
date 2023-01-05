@@ -35,7 +35,7 @@ function (m::BaseEnv)()
     n = size(m.agent.recur.state[1])[end]
     # temp_other_input = randn(Float32, 4, n) |> device
     # other_input = vcat(m.agent.recur.state[2], m.agent.recur.state[1][1:1, :], m.agent.recur.state[1][2:2, :])
-    other_input = vcat(m.agent.recur.state[2], cos.(m.agent.recur.state[1] ./ 4), sin.(m.agent.recur.state[1] ./ 4))
+    other_input = vcat(m.agent.recur.state[2], cos.(m.agent.recur.state[1] ./ 32), sin.(m.agent.recur.state[1] ./ 32))
 
     vision = reshape(update_vision_soft(m.vision_angle |> cpu, m.agent.recur.state[1] |> cpu)[:, :, 1], :, 1, n) |> device
     
