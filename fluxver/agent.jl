@@ -5,11 +5,11 @@ struct AgentCore
     main_chain::Chain
 end
 
-function AgentCore(vision_size::Integer, vision_features::Integer, mem_size::Integer, other_input_size::Integer)
+function AgentCore(vision_size::Integer, vision_downscale::Integer, vision_features::Integer, mem_size::Integer, other_input_size::Integer)
     vision_chain = Chain(
-        Flux.MeanPool((4,)),
+        Flux.MeanPool((vision_downscale,)),
         Flux.flatten,
-        Flux.Dense(vision_features*vision_size÷4 => 128, Flux.swish) 
+        Flux.Dense(vision_features*vision_size÷vision_downscale => 128, Flux.swish) 
     )
 
     main_chain = Chain(
@@ -26,20 +26,21 @@ struct Agent
     recur::Flux.Recur
 end
 
-function Agent(vision_size::Integer, vision_features::Integer, mem_size::Integer, other_input_size::Integer; batch_size::Integer = 1)
-    core = AgentCore(vision_size, vision_features, mem_size, other_input_size)
+function make_init_state(mem_size, batch_size)
     pos_init = randn(Float32, 2, batch_size) * 16f0
     vel_init = zeros(Float32, 2, batch_size)
     mem_init = zeros(Float32, mem_size, batch_size)
-    recur = Flux.Recur(core, (pos_init, vel_init, mem_init))
+    pos_init, vel_init, mem_init
+end
+
+function Agent(vision_size::Integer, vision_features::Integer, mem_size::Integer, other_input_size::Integer, batch_size::Integer, vision_downscale::Integer)
+    core = AgentCore(vision_size, vision_downscale, vision_features, mem_size, other_input_size)
+    recur = Flux.Recur(core, make_init_state(mem_size, batch_size))
     return Agent(recur)
 end
 
-function reset!(agent::Agent; batch_size::Integer = agent.recur.state[1][end])
-    pos_init = randn(Float32, 2, batch_size)
-    vel_init = zeros(Float32, 2, batch_size)
-    mem_init = zeros(Float32, mem_size, batch_size)
-    agent.recur.state = (pos_init, vel_init, mem_init)
+function reset!(agent::Agent; batch_size::Integer = size(agent.recur.state[1])[end], mem_size::Integer = size(agent.recur.state[3])[1])
+    agent.recur.state = make_init_state(mem_size, batch_size)
     nothing
 end
 

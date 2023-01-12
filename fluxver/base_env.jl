@@ -10,11 +10,11 @@ struct BaseEnv
     cancel_diag::AbstractArray
 end
 
-function BaseEnv(vision_size::Integer, mem_size::Integer; batch_size::Integer = 1)
+function BaseEnv(;vision_size::Integer = 16, vision_downscale::Integer = 2, mem_size::Integer = 32, batch_size::Integer = 64)
     vision_features::Integer = 1
-    other_input_size::Integer = 6
+    other_input_size::Integer = 4
 
-    a = Agent(vision_size, vision_features, mem_size, other_input_size, batch_size=batch_size)
+    a = Agent(vision_size, vision_features, mem_size, other_input_size, batch_size, vision_downscale)
     vision_angle = vcat([[cos(i*2pi/vision_size) sin(i*2pi/vision_size)] for i in 0:vision_size-1]...)'
     cancel_diag = [j==k ? 0 : 1 for j=1:batch_size, k=1:batch_size]
     BaseEnv(a, vision_angle, cancel_diag)
@@ -34,8 +34,8 @@ function (m::BaseEnv)()
 
     n = size(m.agent.recur.state[1])[end]
     # temp_other_input = randn(Float32, 4, n) |> device
-    # other_input = vcat(m.agent.recur.state[2], m.agent.recur.state[1][1:1, :], m.agent.recur.state[1][2:2, :])
-    other_input = vcat(m.agent.recur.state[2], cos.(m.agent.recur.state[1] ./ 32), sin.(m.agent.recur.state[1] ./ 32))
+    other_input = vcat(m.agent.recur.state[2], m.agent.recur.state[1][1:1, :], m.agent.recur.state[1][2:2, :])
+    # other_input = vcat(m.agent.recur.state[2], cos.(m.agent.recur.state[1] ./ 32), sin.(m.agent.recur.state[1] ./ 32))
 
     vision = reshape(update_vision_soft(m.vision_angle |> cpu, m.agent.recur.state[1] |> cpu)[:, :, 1], :, 1, n) |> device
     
