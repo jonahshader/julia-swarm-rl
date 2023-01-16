@@ -1,6 +1,6 @@
-include("base_env.jl")
-include("losses.jl")
-include("es.jl")
+include("../base_env.jl")
+include("../losses.jl")
+include("../es.jl")
 
 function minimise_sd_task(;b = BaseEnv())
 

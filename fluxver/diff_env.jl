@@ -74,7 +74,7 @@ function update_vision_soft(vision_angle::AbstractArray, pos::AbstractArray)
     return sum(reshape(smoothstep(1 .- d), pos_size, vis_size, :) .* (1 .- reshape(Diagonal(ones(pos_size)), pos_size, 1, pos_size)), dims = 3)
 end
 
-function render_base_env(b::BaseEnv)
+function render(b::BaseEnv)
     pos = b.agent.recur.state[1] |> cpu
     vis_angle = b.vision_angle |> cpu
 

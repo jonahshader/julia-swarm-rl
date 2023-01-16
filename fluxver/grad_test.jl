@@ -1,19 +1,20 @@
-include("base_env.jl")
+include("positional_env.jl")
 include("losses.jl")
 
 using Flux
 
-function test_loss(b)
-    b()
+function test_loss(b, x)
+    b(x)
     sd(b)
 end
 
 function test_grad()
-    b = BaseEnv()
+    b = PositionalEnv()
+    x = randn(Float32, 2, 64)
     ps = Flux.params(b)
     opt = Adam()
 
-    grad = gradient(() -> test_loss(b), ps)
+    grad = gradient(() -> test_loss(b, x), ps)
 
     Flux.update!(opt, ps, grad)
     b

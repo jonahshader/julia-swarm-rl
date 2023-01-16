@@ -1,17 +1,25 @@
-include("base_env.jl")
+include("positional_env.jl")
 include("losses.jl")
 using Raylib
 using Flux
+using CUDA
 
 const s_w = 1920
 const s_h = 1080
 
-function run(env)
+function run(env::PositionalEnv)
     Raylib.InitWindow(s_w, s_h, "Swarm Reinforcement Learning Demo")
     Raylib.SetTargetFPS(165)
 
     # cam = Raylib.RayCamera2D(0f0, 0f0, 0f0, 0f0, 0f0, 1f0)
     cam = Raylib.RayCamera2D(s_w/2f0, s_h/2f0, 0f0, 0f0, 0f0, 0.5f0)
+    device = if env.agent.recur.state[1] |> typeof <: CuArray
+        gpu
+    else
+        cpu
+    end
+
+    x = randn(Float32, 2, size(env.agent.recur.state[1])[end]) |> device
 
     s = 4f0
     try
@@ -40,7 +48,7 @@ function run(env)
             Raylib.BeginDrawing()
                 Raylib.BeginMode2D(cam)
                     Raylib.ClearBackground(Raylib.RayColor(0/255,0/255,0/255,255/255))
-                    env() # update
+                    env(x) # update
                     render(env)
                 Raylib.EndMode2D()
                 Raylib.DrawText("$(1/Raylib.GetFrameTime())", 32, 32, 16, Raylib.RayColor(1.0, 1.0, 1.0, 1.0))
