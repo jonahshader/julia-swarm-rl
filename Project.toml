@@ -1,0 +1,4 @@
+name = "julia_swarm_rl"
+uuid = "01ef2024-06e2-4a13-98d3-120ad21ebc78"
+authors = ["jonahshader <jonah.shader@gmail.com>"]
+version = "0.1.0"
